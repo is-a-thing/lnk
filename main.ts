@@ -14,7 +14,7 @@ wooter.route(c.chemin(c.pMultiple(c.pString("pathParts"), false)))
     if (result.value) {
       destination = result.value
     } else {
-      destination = `https://github.com/is-a-th.ing/lnk`
+      destination = `https://github.com/is-a-thing/lnk`
     }
     resp(redirectResponse(destination, {
       status: 302,
