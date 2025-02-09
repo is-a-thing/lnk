@@ -1,5 +1,5 @@
-import { c, Wooter } from "@bronti/wooter";
-import { errorResponse, redirectResponse } from "@bronti/wooter/util";
+import { c, Wooter } from "jsr:@bronti/wooter";
+import { errorResponse, redirectResponse } from "jsr:@bronti/wooter/util";
 
 const wooter = new Wooter().useMethods();
 const kv = await Deno.openKv();
