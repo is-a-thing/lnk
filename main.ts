@@ -15,10 +15,13 @@ function nestObjects(objects: Deno.KvEntry<string>[]) {
     key.forEach((k, index) => {
       if (!current[k]) {
         current[k] = {};
+      } else if (typeof current[k] !== 'object') {
+        current[k] = { _value: current[k] };
       }
       
+      
       if (index === key.length - 1) {
-        current[k] = obj.value;
+        current[k] = typeof obj === 'object' ? obj.value : { _value: originalObject.value };
       }
       
       current = current[k];
@@ -32,13 +35,13 @@ function traverseAndFormat(obj, depth = 0) {
   let result = '';
   
   for (const key in obj) {
-    result += ' '.repeat(depth * 4) + '/' + key + '\n';
-    
-    if (typeof obj[key] === 'object' && obj[key] !== null) {
-      result += traverseAndFormat(obj[key], depth + 1);
-    } else {
-      result += ' '.repeat((depth + 1) * 4) + obj[key] + '\n';
+    if (key === '_value') {
+      result += ' '.repeat(depth * 4) + obj[key] + '\n';
+      continue;
     }
+    
+    result += ' '.repeat(depth * 4) + '/' + key + '\n';
+    result += traverseAndFormat(obj[key], depth + 1);
   }
   
   return result;
