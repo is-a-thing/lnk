@@ -1,5 +1,5 @@
 import { c, Wooter } from "jsr:@bronti/wooter";
-import { errorResponse, redirectResponse } from "jsr:@bronti/wooter/util";
+import { errorResponse, jsonResponse, redirectResponse } from "jsr:@bronti/wooter/util";
 
 const wooter = new Wooter().useMethods();
 const kv = await Deno.openKv();
@@ -39,7 +39,6 @@ function nestObjects(objects: Deno.KvEntry<string>[]) {
 
 function traverseAndFormat(obj: RouteMap | RouteMap[string], depth = 0) {
   let result = '';
-  console.log(obj)
   if(_value in obj) {
     result += ' '.repeat(depth * 4) + obj[_value] + '\n'
   }
@@ -55,10 +54,14 @@ function traverseAndFormat(obj: RouteMap | RouteMap[string], depth = 0) {
   return result;
 }
 
-wooter.GET(c.chemin('list'), async ({ resp }) => {
+wooter.GET(c.chemin('list'), async ({ resp, url }) => {
   const result = kv.list<string>({ prefix: [] });
   const map = nestObjects(await Array.fromAsync(result))
-  resp(new Response(traverseAndFormat(map)))
+  if(url.searchParams.getAll("json").length) {
+    resp(jsonResponse(map))
+  } else {
+    resp(new Response(traverseAndFormat(map)))
+  }
 })
 
 wooter.route(c.chemin(c.pMultiple(c.pString("pathParts"), true)))
