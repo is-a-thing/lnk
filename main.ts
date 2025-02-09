@@ -5,55 +5,59 @@ const wooter = new Wooter().useMethods();
 const kv = await Deno.openKv();
 
 const key = Deno.env.get("API_KEY");
+const _value = Symbol.for('__value')
+
+type RouteMap = {
+  [x: string]: {
+    [_value]: string,
+    [x: string]: string | RouteMap,
+  }
+}
 
 function nestObjects(objects: Deno.KvEntry<string>[]) {
-  let result = {};
-  
+  let result: RouteMap = {};
+
   objects.forEach(({ key: path, ...originalObject }) => {
     let current = result;
-    
-    path.forEach((key, index) => {
-      if (!current[key] || typeof current[key] !== 'object') {
-        current[key] = {};
+  
+    // @ts-ignore:
+    path.forEach((key: string, index) => {
+      if(current[key] && typeof current[key] === 'string') {
+        current[key] = { [_value]: current[key] }
       }
-      
-      if (index === path.length - 1) {
-        if (typeof originalObject === 'object') {
-          current[key] = originalObject.value;
-        } else {
-          current[key]._value = originalObject.value;
-        }
+
+      if(index === path.length - 1) {
+        current[key] = originalObject.value
       }
-      
-      current = current[key];
+
+      current = current[key]
     });
   });
-  
+
   return result;
 }
 
-function traverseAndFormat(obj, depth = 0) {
+function traverseAndFormat(obj: RouteMap | RouteMap[string], depth = 0) {
   let result = '';
-  
+  console.log(obj)
+  if(_value in obj) {
+    result += ' '.repeat(depth * 4) + obj[_value] + '\n'
+  }
   for (const key in obj) {
-    if (key === '_value') {
-      result += ' '.repeat(depth * 4) + obj[key] + '\n';
-      continue;
-    }
-    
     result += ' '.repeat(depth * 4) + '/' + key + '\n';
     if (typeof obj[key] === 'object') {
       result += traverseAndFormat(obj[key], depth + 1);
+    } else {
+      result += ' '.repeat((depth + 1) * 4) + obj[key] + '\n';
     }
   }
-  
+
   return result;
 }
 
 wooter.GET(c.chemin('list'), async ({ resp }) => {
   const result = kv.list<string>({ prefix: [] });
   const map = nestObjects(await Array.fromAsync(result))
-  console.log(map)
   resp(new Response(traverseAndFormat(map)))
 })
 
@@ -61,7 +65,7 @@ wooter.route(c.chemin(c.pMultiple(c.pString("pathParts"), true)))
   .GET(async ({ resp, params: { pathParts } }) => {
     const result = await kv.get<string>(pathParts);
     let destination: string;
-    
+
     if (result.value) {
       destination = result.value
     } else {
@@ -74,10 +78,11 @@ wooter.route(c.chemin(c.pMultiple(c.pString("pathParts"), true)))
     if (request.headers.get("Authorization") !== key) {
       return resp(errorResponse(401, "Not Authorized"));
     }
+    
 
     const path = new URL(await request.text());
     const result = await kv.set(pathParts, path.toString())
-    if(result.ok) {
+    if (result.ok) {
       resp(new Response())
     } {
       resp(errorResponse(500))
