@@ -19,9 +19,9 @@ function nestObjects(objects: Deno.KvEntry<string>[]) {
       
       if (index === path.length - 1) {
         if (typeof originalObject === 'object') {
-          current[key] = originalObject;
+          current[key] = originalObject.value;
         } else {
-          current[key]._value = originalObject;
+          current[key]._value = originalObject.value;
         }
       }
       
