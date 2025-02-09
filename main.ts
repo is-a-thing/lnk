@@ -9,22 +9,23 @@ const key = Deno.env.get("API_KEY");
 function nestObjects(objects: Deno.KvEntry<string>[]) {
   let result = {};
   
-  objects.forEach(({ key, ...obj }) => {
+  objects.forEach(({ key: path, ...originalObject }) => {
     let current = result;
     
-    key.forEach((k, index) => {
-      if (!current[k]) {
-        current[k] = {};
-      } else if (typeof current[k] !== 'object') {
-        current[k] = { _value: current[k] };
+    path.forEach((key, index) => {
+      if (!current[key] || typeof current[key] !== 'object') {
+        current[key] = {};
       }
       
-      
-      if (index === key.length - 1) {
-        current[k] = typeof obj === 'object' ? obj.value : { _value: originalObject.value };
+      if (index === path.length - 1) {
+        if (typeof originalObject === 'object') {
+          current[k] = originalObject;
+        } else {
+          current[key]._value = originalObject;
+        }
       }
       
-      current = current[k];
+      current = current[key];
     });
   });
   
@@ -41,7 +42,9 @@ function traverseAndFormat(obj, depth = 0) {
     }
     
     result += ' '.repeat(depth * 4) + '/' + key + '\n';
-    result += traverseAndFormat(obj[key], depth + 1);
+    if (typeof obj[key] === 'object') {
+      result += traverseAndFormat(obj[key], depth + 1);
+    }
   }
   
   return result;
