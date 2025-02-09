@@ -53,7 +53,7 @@ function traverseAndFormat(obj, depth = 0) {
 wooter.GET(c.chemin('list'), async ({ resp }) => {
   const result = kv.list<string>({ prefix: [] });
   const map = nestObjects(await Array.fromAsync(result))
-
+  console.log(map)
   resp(new Response(traverseAndFormat(map)))
 })
 
